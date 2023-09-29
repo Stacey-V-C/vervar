@@ -1,30 +1,14 @@
 import path from 'path';
 import { FileHandle } from 'fs/promises';
 
-import {
-  defaultCss,
-  errorCss,
-  variableCss,
-  defaultGetMultipleFilesFn
-} from '../customPluginUtils';
+import { defaultGetMultipleFilesFn } from '../../customPluginUtils';
+import type { ArgPaths, VerVarPlugin } from '../../customPluginUtils/types';
 
-import type { VerVarPlugin } from '../customPluginUtils/types';
-import { ArgPaths } from '../types';
+import { getUnmatchedVarMessage } from './text';
 
-type DotEnvResult = {
-  envVars: string[],
-};
-
+type DotEnvResult = { envVars: string[] };
 type DotEnvResultKeys = keyof DotEnvResult;
-
 const dotEnvResultKeys: DotEnvResultKeys[] = ['envVars'];
-
-const getUnmatchedVarMessage = (envVar: string) => [
-  `${defaultCss}Env var `,
-  `${variableCss}${envVar} `,
-  `${defaultCss}has `,
-  `${errorCss}no matching custom env var`,
-].join('');
 
 const extractEnvVarKeys = async (file: FileHandle) => {
   const res: DotEnvResult = {

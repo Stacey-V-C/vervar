@@ -1,4 +1,5 @@
 export type {
+  ArgPaths,
   ExtractResults,
   TargetFile,
   VerifyStep,

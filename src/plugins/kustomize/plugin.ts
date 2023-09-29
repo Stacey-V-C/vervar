@@ -1,14 +1,14 @@
 import path from 'path';
 import { FileHandle } from 'fs/promises';
 
-import {
-  defaultCss,
-  errorCss,
-  variableCss,
-  defaultGetMultipleFilesFn,
-} from '../customPluginUtils';
+import { defaultGetMultipleFilesFn } from '../../customPluginUtils';
+import type { ArgPaths, VerVarPlugin } from '../../types';
 
-import type { ArgPaths, VerVarPlugin } from '../types';
+import { 
+  getUnmatchedParamMessage, 
+  getUnmatchedSecretKeyMessage, 
+  getUnmatchedSecretMessage 
+} from './text';
 
 type KustomizeResult = {
   secretKeys: string[],
@@ -17,7 +17,6 @@ type KustomizeResult = {
 }
 
 type KustomizeResultKeys = keyof KustomizeResult;
-
 const kustomizeResultKeys: KustomizeResultKeys[] = ['secretKeys', 'secrets', 'params'];
 
 const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
@@ -51,13 +50,6 @@ const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
   return results;
 };
 
-const getUnmatchedSecretKeyMessage = (secretKey: string) => [
-  `${defaultCss}Secret key `,
-  `${variableCss}${secretKey} `,
-  `${defaultCss}has `,
-  `${errorCss}no matching custom env var`,
-].join('');
-
 const verifySecretKeysAreUsed = {
   argPaths: [
     ['this', 'secretKeys'],
@@ -71,20 +63,6 @@ const verifySecretKeysAreUsed = {
     return errors;
   },
 };
-
-const getUnmatchedParamMessage = (param: string) => [
-  `${defaultCss}Param `,
-  `${variableCss}${param} `,
-  `${defaultCss}has `,
-  `${errorCss}no matching secret`,
-].join('');
-
-const getUnmatchedSecretMessage = (secret: string) => [
-  `${defaultCss}Secret `,
-  `${variableCss}${secret} `,
-  `${defaultCss}has `,
-  `${errorCss}no matching param`,
-].join('');
 
 const verifyParamsAndSecretsMatch = {
   argPaths: [

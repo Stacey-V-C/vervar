@@ -2,15 +2,10 @@ import path from "path";
 import { FileHandle } from "fs/promises";
 
 import { defaultGetSingleFileFn } from "../../customPluginUtils";
-
 import type { VerVarPlugin } from "../../customPluginUtils/types";
 
-type CustomEnvVarResult = {
-  customEnvVars: string[],
-}
-
+type CustomEnvVarResult = { customEnvVars: string[] }
 type CustomEnvVarResultKeys = keyof CustomEnvVarResult;
-
 const customEnvVarResultKeys: CustomEnvVarResultKeys[] = ['customEnvVars'];
 
 export const extractJSONEnvVarRecursive = (val: any): string[] => typeof val === 'string'

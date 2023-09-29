@@ -1,16 +1,11 @@
 import path from "path";
 import { FileHandle } from "fs/promises";
 
-import { defaultGetSingleFileFn } from "../customPluginUtils";
+import { defaultGetSingleFileFn } from "../../customPluginUtils";
+import type { VerVarPlugin } from "../../customPluginUtils/types";
 
-import type { VerVarPlugin } from "../customPluginUtils/types";
-
-type TerraformResult = {
-  params: string[],
-};
-
+type TerraformResult = { params: string[] };
 type TerraformResultKeys = keyof TerraformResult;
-
 const terraformResultKeys: TerraformResultKeys[] = ['params'];
 
 const extractTerraformParams = async (file: FileHandle) => {
