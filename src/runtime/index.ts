@@ -12,8 +12,6 @@ import type {
 } from '../types';
 
 import {
-  errorCss,
-  successCss,
   getDefaultFailureMessage,
   getDefaultSuccessMessage,
   getFailedRequirementsMessage,

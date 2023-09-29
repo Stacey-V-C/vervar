@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 
 import type { TargetFile } from '../types';
-import { FileHandle } from 'fs/promises';
 
 const walkDirAndSelectFilesMatchingRegEx = async (
   targetDir: string,
