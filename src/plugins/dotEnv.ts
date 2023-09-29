@@ -43,7 +43,7 @@ const extractEnvVarKeys = async (file: FileHandle) => {
 };
 
 const verifyEnvVarsAreUsed = {
-  argPaths: ['this.env_vars', 'custom_env_vars.custom_env_vars'],
+  argPaths: ['this.env_vars', 'customEnvVars.customEnvVars'],
   fn: (_: unknown, envVars: string[], customEnvVars: string[]) => {
     const errors = envVars
       .filter(envVar => !customEnvVars.includes(envVar))

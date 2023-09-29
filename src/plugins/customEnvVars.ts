@@ -6,48 +6,42 @@ import { defaultGetSingleFileFn } from "../customPluginUtils";
 import type { VerVarPlugin } from "../customPluginUtils/types";
 
 type CustomEnvVarResult = {
-  custom_env_vars: string[],
+  customEnvVars: string[],
 }
 
 type CustomEnvVarResultKeys = keyof CustomEnvVarResult;
 
-const customEnvVarResultKeys: CustomEnvVarResultKeys[] = ['custom_env_vars'];
+const customEnvVarResultKeys: CustomEnvVarResultKeys[] = ['customEnvVars'];
+
+const extractJSONEnvVarRecursive = (val: any): string[] => typeof val === 'string'
+  ? [val]
+  : Object.keys(val)
+    .filter(v => v !== '__format')
+    .map(key => val[key])
+    .flatMap(extractJSONEnvVarRecursive)
 
 const extractCustomEnvVarsForJson = async (file: FileHandle, pluginConfig: any) => {
-  const res: CustomEnvVarResult = {
-    custom_env_vars: [],
-  };
-
   const json = await file.readFile('utf-8');
 
   const parsed = JSON.parse(json);
 
-  const pushRecursive = (val: any) => {
-    if (typeof val === 'string') {
-      res.custom_env_vars.push(val);
-    } else {
-      for (const key in val) {
-        if (key !== '__format') {
-          pushRecursive(val[key]);
-        }
-      }
-    }
-  };
+  const parsedEnvVars = extractJSONEnvVarRecursive(parsed);
 
-  pushRecursive(parsed);
+  const additionalEnvVars: string[] = pluginConfig?.additionalEnvVars || [];
 
-  const additionalEnvVars = pluginConfig?.additionalEnvVars || [];
+  const customEnvVars = [
+    ...parsedEnvVars,
+    ...additionalEnvVars,
+  ];
 
-  res.custom_env_vars.push(...additionalEnvVars);
-
-  return res;
+  return { customEnvVars };
 };
 
 export const CustomEnvVarPlugin: VerVarPlugin<
   CustomEnvVarResult,
   CustomEnvVarResultKeys
 > = {
-  name: 'custom_env_vars',
+  name: 'customEnvVars',
   defaultPath: path.join(process.cwd(),
     'config', 'custom-environment-variables.json',
   ),

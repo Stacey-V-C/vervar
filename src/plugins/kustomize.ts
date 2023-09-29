@@ -59,7 +59,7 @@ const getUnmatchedSecretKeyMessage = (secretKey: string) => [
 ].join('');
 
 const verifySecretKeysAreUsed = {
-  argPaths: ['this.secret_keys', 'custom_env_vars.custom_env_vars'],
+  argPaths: ['this.secret_keys', 'customEnvVars.customEnvVars'],
   fn: (_: unknown, secretKeys: string[], customEnvVars: string[]) => {
     const errors = secretKeys
       .filter(secretKey => !customEnvVars.includes(secretKey))
