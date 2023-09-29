@@ -104,7 +104,7 @@ export const KustomizePlugin: VerVarPlugin<
   KustomizeResultKeys
 > = {
   name: 'kustomize',
-  defaultPath: path.join(process.cwd(), '_infra'),
+  path: path.join(process.cwd(), '_infra'),
   resultNames: kustomizeResultKeys,
   getFilesFn: defaultGetMultipleFilesFn(/kustomization\.yaml$/),
   extractFn: extractParamsSecretsAndSecretKeys,

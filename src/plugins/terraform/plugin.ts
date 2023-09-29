@@ -43,9 +43,7 @@ export const TerraformPlugin: VerVarPlugin<
   TerraformResultKeys
 > = {
   name: 'terraform',
-  defaultPath: path.join(process.cwd(),
-    '_infra', 'terraform',
-  ),
+  path: path.join(process.cwd(), '_infra', 'terraform'),
   getFilesFn: getAppAndWorkerTerraformFiles,//defaultGetSingleFileFn,
   resultNames: terraformResultKeys,
   extractFn: extractTerraformParams,

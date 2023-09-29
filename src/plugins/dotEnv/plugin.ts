@@ -46,7 +46,7 @@ export const DotEnvPlugin: VerVarPlugin<
   DotEnvResultKeys
 > = {
   name: 'dotEnv',
-  defaultPath: path.join(process.cwd(), '_infra'),
+  path: path.join(process.cwd(), '_infra'),
   resultNames: dotEnvResultKeys,
   getFilesFn: defaultGetMultipleFilesFn(/\.env$/),
   extractFn: extractEnvVarKeys,

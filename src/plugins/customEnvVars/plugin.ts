@@ -37,7 +37,7 @@ export const CustomEnvVarPlugin: VerVarPlugin<
   CustomEnvVarResultKeys
 > = {
   name: 'customEnvVars',
-  defaultPath: path.join(process.cwd(),
+  path: path.join(process.cwd(),
     'config', 'custom-environment-variables.json',
   ),
   resultNames: customEnvVarResultKeys,

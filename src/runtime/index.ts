@@ -27,7 +27,7 @@ export class PlugInRunner<
   N extends keyof R,
 > implements VerVarPlugin<R, N> {
   name: string;
-  defaultPath: string;
+  path: string;
   getFilesFn:
     | ((path: string) => Promise<TargetFile | TargetFile[]>)
     | ((path: string, pluginSpecific: Record<string, any> | undefined) => Promise<TargetFile | TargetFile[]>);
@@ -35,11 +35,11 @@ export class PlugInRunner<
     | ((file: FileHandle) => Promise<R>)
     | ((file: FileHandle, pluginSpecific: Record<string, any> | undefined) => Promise<R>);
   verifySteps: VerifyStep[];
+  getSuccessMessage: (path: string) => string;
+  getFailureMessage: (path: string) => string;
   resultNames: N[];
   results: ExtractResults<R>[] | null;
   previousResults: PlugInRoutineResult<any>[];
-  getSuccessMessage: (path: string) => string;
-  getFailureMessage: (path: string) => string;
   pluginSpecific?: Record<string, any>;
 
   constructor(
@@ -47,15 +47,15 @@ export class PlugInRunner<
     previousResults?: PlugInRoutineResult<any>[]
   ) {
     this.name = plugin.name;
-    this.defaultPath = plugin?.defaultPath;
+    this.path = plugin.path;
     this.getFilesFn = plugin.getFilesFn || defaultGetSingleFileFn;
     this.extractFn = plugin.extractFn;
     this.verifySteps = plugin.verifySteps || [];
+    this.getSuccessMessage = plugin.getSuccessMessage || getDefaultSuccessMessage;
+    this.getFailureMessage = plugin.getFailureMessage || getDefaultFailureMessage;
     this.resultNames = plugin.resultNames;
     this.results = null;
     this.previousResults = previousResults || [];
-    this.getSuccessMessage = plugin.getSuccessMessage || getDefaultSuccessMessage;
-    this.getFailureMessage = plugin.getFailureMessage || getDefaultFailureMessage;
     this.pluginSpecific = plugin?.pluginSpecific;
   }
 
@@ -102,7 +102,7 @@ export class PlugInRunner<
   runPluginRoutine = async (): Promise<PlugInRoutineResult<R>> => {
     let hasErrors = false;
 
-    const files = await this.getFilesFn(this.defaultPath, this.pluginSpecific);
+    const files = await this.getFilesFn(this.path, this.pluginSpecific);
 
     const multipleFiles = Array.isArray(files);
 
@@ -130,7 +130,7 @@ export class PlugInRunner<
 
     return {
       name: this.name,
-      path: this.defaultPath, // TODO probably just call this path lol
+      path: this.path,
       results,
       hasErrors,
     };
@@ -167,15 +167,11 @@ export class PlugInRunner<
         return [];
       }
 
-
-
       return varResults;
     });
 
     return step.fn(this.pluginSpecific, ...args,);
   }
-
-
 }
 
 export const runRoutines = async (plugs: VerVarPlugin<any, any>[]) => {
