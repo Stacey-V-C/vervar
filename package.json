@@ -4,7 +4,7 @@
   "description": "Verify your variables",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx jest ."
   },
   "bin": {
     "vervar": "./dist/index.js"
@@ -20,9 +20,16 @@
   "author": "Stacey V Carroll",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.4.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.1.6"
   },
-  "dependencies": {
-    "@types/node": "^20.4.2"
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testEnvironment": "node"
   }
 }

@@ -1,9 +1,9 @@
 import path from "path";
 import { FileHandle } from "fs/promises";
 
-import { defaultGetSingleFileFn } from "../customPluginUtils";
+import { defaultGetSingleFileFn } from "../../customPluginUtils";
 
-import type { VerVarPlugin } from "../customPluginUtils/types";
+import type { VerVarPlugin } from "../../customPluginUtils/types";
 
 type CustomEnvVarResult = {
   customEnvVars: string[],
@@ -13,12 +13,12 @@ type CustomEnvVarResultKeys = keyof CustomEnvVarResult;
 
 const customEnvVarResultKeys: CustomEnvVarResultKeys[] = ['customEnvVars'];
 
-const extractJSONEnvVarRecursive = (val: any): string[] => typeof val === 'string'
+export const extractJSONEnvVarRecursive = (val: any): string[] => typeof val === 'string'
   ? [val]
   : Object.keys(val)
-    .filter(v => v !== '__format')
+    .filter(key => key !== '__format')
     .map(key => val[key])
-    .flatMap(extractJSONEnvVarRecursive)
+    .flatMap(extractJSONEnvVarRecursive);
 
 const extractCustomEnvVarsForJson = async (file: FileHandle, pluginConfig: any) => {
   const json = await file.readFile('utf-8');
