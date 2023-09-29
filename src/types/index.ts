@@ -10,8 +10,10 @@ export type TargetFile = {
   file: FileHandle;
 };
 
+export type ArgPaths = [string, string][];
+
 export type VerifyStep = {
-  argPaths: string[];
+  argPaths: ArgPaths;
   fn: (pluginSpecific?: Record<string, any>, ...args: string[][]) => string[];
 };
 

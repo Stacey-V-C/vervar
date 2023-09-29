@@ -8,21 +8,21 @@ import {
   defaultGetMultipleFilesFn,
 } from '../customPluginUtils';
 
-import type { VerVarPlugin } from '../types';
+import type { ArgPaths, VerVarPlugin } from '../types';
 
 type KustomizeResult = {
-  secret_keys: string[],
+  secretKeys: string[],
   secrets: string[],
   params: string[],
 }
 
 type KustomizeResultKeys = keyof KustomizeResult;
 
-const kustomizeResultKeys: KustomizeResultKeys[] = ['secret_keys', 'secrets', 'params'];
+const kustomizeResultKeys: KustomizeResultKeys[] = ['secretKeys', 'secrets', 'params'];
 
 const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
   const results: Record<keyof KustomizeResult, string[]> = {
-    secret_keys: [],
+    secretKeys: [],
     secrets: [],
     params: [],
   }
@@ -44,7 +44,7 @@ const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
 
     if (secretKeysRegEx.test(line)) {
       const res = line.match(secretKeysRegEx);
-      if (res && res[1]) results.secret_keys.push(res[1]);
+      if (res && res[1]) results.secretKeys.push(res[1]);
     }
   }
 
@@ -59,7 +59,10 @@ const getUnmatchedSecretKeyMessage = (secretKey: string) => [
 ].join('');
 
 const verifySecretKeysAreUsed = {
-  argPaths: ['this.secret_keys', 'customEnvVars.customEnvVars'],
+  argPaths: [
+    ['this', 'secretKeys'],
+    ['customEnvVars', 'customEnvVars']
+  ] as ArgPaths,
   fn: (_: unknown, secretKeys: string[], customEnvVars: string[]) => {
     const errors = secretKeys
       .filter(secretKey => !customEnvVars.includes(secretKey))
@@ -84,7 +87,10 @@ const getUnmatchedSecretMessage = (secret: string) => [
 ].join('');
 
 const verifyParamsAndSecretsMatch = {
-  argPaths: ['this.params', 'this.secrets'],
+  argPaths: [
+    ['this', 'params'],
+    ['this', 'secrets']
+  ] as ArgPaths,
   fn: (_: unknown, params: string[], secrets: string[]) => {
 
     const formattedSecrets = secrets.map(secret => secret.replace(/\./g, '/'));
@@ -102,7 +108,10 @@ const verifyParamsAndSecretsMatch = {
 };
 
 export const verifyTerraformPassesParams = {
-  argPaths: ['this.params', 'terraform.params'],
+  argPaths: [
+    ['this', 'params'],
+    ['terraform', 'params']
+  ] as ArgPaths,
   fn: (_: unknown, params: string[], terraformParams: string[]) => {
     const errors = params //TODO we can probably make this a generic function
       .filter(param => !terraformParams.includes(param))

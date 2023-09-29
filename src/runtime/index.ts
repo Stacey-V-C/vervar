@@ -65,7 +65,7 @@ export class PlugInRunner<
     const errors: string[] = [];
 
     const requirements = this.verifySteps
-      .flatMap(verifyFn => verifyFn.argPaths.map(p => p.split('.')));
+      .flatMap(verifyFn => verifyFn.argPaths);
 
     for (const requirement of requirements) {
       if (requirement.length !== 2) {
@@ -139,9 +139,7 @@ export class PlugInRunner<
   }
 
   runVerifyStep = (result: ExtractResults<R>) => (step: VerifyStep) => {
-    const args = step.argPaths.map(p => {
-      const [pluginName, resultName] = p.split('.');
-
+    const args = step.argPaths.map(([pluginName, resultName]) => {
       const pluginResult = pluginName === 'this'
         ? result
         : this.previousResults

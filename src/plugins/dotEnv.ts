@@ -9,14 +9,15 @@ import {
 } from '../customPluginUtils';
 
 import type { VerVarPlugin } from '../customPluginUtils/types';
+import { ArgPaths } from '../types';
 
 type DotEnvResult = {
-  env_vars: string[],
+  envVars: string[],
 };
 
 type DotEnvResultKeys = keyof DotEnvResult;
 
-const dotEnvResultKeys: DotEnvResultKeys[] = ['env_vars'];
+const dotEnvResultKeys: DotEnvResultKeys[] = ['envVars'];
 
 const getUnmatchedVarMessage = (envVar: string) => [
   `${defaultCss}Env var `,
@@ -27,7 +28,7 @@ const getUnmatchedVarMessage = (envVar: string) => [
 
 const extractEnvVarKeys = async (file: FileHandle) => {
   const res: DotEnvResult = {
-    env_vars: [],
+    envVars: [],
   };
 
   const envVarRegEx = /^(\S+)\s*=\s*\S+/;
@@ -35,7 +36,7 @@ const extractEnvVarKeys = async (file: FileHandle) => {
   for await (const line of file.readLines()) {
     if (envVarRegEx.test(line)) {
       const match = line.match(envVarRegEx);
-      if (match && match[1]) res.env_vars.push(match[1]);
+      if (match && match[1]) res.envVars.push(match[1]);
     }
   };
 
@@ -43,7 +44,10 @@ const extractEnvVarKeys = async (file: FileHandle) => {
 };
 
 const verifyEnvVarsAreUsed = {
-  argPaths: ['this.env_vars', 'customEnvVars.customEnvVars'],
+  argPaths: [
+    ['this', 'envVars'],
+    ['customEnvVars', 'customEnvVars'],
+  ] as ArgPaths,
   fn: (_: unknown, envVars: string[], customEnvVars: string[]) => {
     const errors = envVars
       .filter(envVar => !customEnvVars.includes(envVar))
