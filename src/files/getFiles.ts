@@ -44,5 +44,5 @@ export const defaultGetSingleFileFn = async (targetFile: string) => {
     file,
   };
 
-  return res;
+  return [res];
 };

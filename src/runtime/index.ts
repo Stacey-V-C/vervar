@@ -1,15 +1,4 @@
-import path from 'path';
-import { defaultGetSingleFileFn } from '../files';
-
 import type { FileHandle } from 'fs/promises';
-
-import type {
-  ExtractResults,
-  PlugInRoutineResult,
-  TargetFile,
-  VerifyStep,
-  VerVarPlugin,
-} from '../types';
 
 import {
   getDefaultFailureMessage,
@@ -20,30 +9,31 @@ import {
   getMissingResultFieldMessage,
   getRequirementFormattingError,
   getSummary,
-} from '../output';
+} from '../output/messages';
+import { defaultGetSingleFileFn } from '../files';
 
-export class PlugInRunner<
-  R extends Record<string, string[]>,
-  N extends keyof R,
-> implements VerVarPlugin<R, N> {
+import type {
+  ExtractResults,
+  PlugInRoutineResult,
+  TargetFile,
+  VerifyStep,
+  VerVarPlugin,
+} from '../types';
+
+export class PlugInRunner<R extends Record<string, string[]>> implements VerVarPlugin<R> {
   name: string;
   path: string;
-  getFilesFn:
-    | ((path: string) => Promise<TargetFile | TargetFile[]>)
-    | ((path: string, pluginSpecific: Record<string, any> | undefined) => Promise<TargetFile | TargetFile[]>);
-  extractFn:
-    | ((file: FileHandle) => Promise<R>)
-    | ((file: FileHandle, pluginSpecific: Record<string, any> | undefined) => Promise<R>);
+  getFilesFn: ((path: string, pluginSpecificData?: Record<string, any>) => Promise<TargetFile[]>);
+  extractFn: ((file: FileHandle, pluginSpecificData?: Record<string, any>) => Promise<R>);
   verifySteps: VerifyStep[];
   getSuccessMessage: (path: string) => string;
   getFailureMessage: (path: string) => string;
-  resultNames: N[];
-  results: ExtractResults<R>[] | null;
+  resultNames: (keyof R)[];
   previousResults: PlugInRoutineResult<any>[];
-  pluginSpecific?: Record<string, any>;
+  pluginSpecificData?: Record<string, any>;
 
   constructor(
-    plugin: VerVarPlugin<R, N>,
+    plugin: VerVarPlugin<R>,
     previousResults?: PlugInRoutineResult<any>[]
   ) {
     this.name = plugin.name;
@@ -54,36 +44,40 @@ export class PlugInRunner<
     this.getSuccessMessage = plugin.getSuccessMessage || getDefaultSuccessMessage;
     this.getFailureMessage = plugin.getFailureMessage || getDefaultFailureMessage;
     this.resultNames = plugin.resultNames;
-    this.results = null;
     this.previousResults = previousResults || [];
-    this.pluginSpecific = plugin?.pluginSpecific;
+    this.pluginSpecificData = plugin?.pluginSpecificData;
   }
 
-  verifyRequirements = (previousPlugins: VerVarPlugin<any, any>[]) => {
-    const errors: string[] = [];
-
+  verifyRequirements = (previousPlugins: VerVarPlugin<any>[]) => {
+    const errors = [];
     const requirements = this.verifySteps
       .flatMap(verifyFn => verifyFn.argPaths);
 
     for (const requirement of requirements) {
-      if (requirement.length !== 2) {
+      if (!Array.isArray(requirement) || requirement.length !== 2) {
         errors.push(getRequirementFormattingError(requirement));
         continue;
       }
 
       const [pluginName, resultName] = requirement;
 
-      if (pluginName === 'this') continue;
+      if (pluginName === 'this') {
+        if (!this.resultNames.includes(resultName as any)) {
+          errors.push(getMissingResultFieldMessage(pluginName, resultName));
+        }
+
+        continue;
+      }
 
       const plugin = previousPlugins.find(p => p.name === pluginName);
 
       if (!plugin) {
-        errors.push(getMissingRequirementMessage(requirement));
+        errors.push(getMissingRequirementMessage(pluginName, resultName));
         continue;
       }
 
       if (!plugin.resultNames.includes(resultName as any)) {
-        errors.push(getMissingResultFieldMessage(requirement));
+        errors.push(getMissingResultFieldMessage(pluginName, resultName));
         continue;
       }
     }
@@ -94,37 +88,49 @@ export class PlugInRunner<
   extractFromFile = async (target: TargetFile): Promise<ExtractResults<R>> => {
     const { path, file } = target;
 
-    const extractedVars = await this.extractFn(file, this.pluginSpecific);
+    const extractedVars = await this.extractFn(file, this?.pluginSpecificData);
 
     return { path, extractedVars };
-  };
+  }
+
+  runVerifyStep = (result: ExtractResults<R>) => (step: VerifyStep) => {
+    const args = step.argPaths.map(([pluginName, resultName]) => {
+      const pluginResults = pluginName === 'this'
+        ? [result]
+        : this.previousResults.find(res => res.name === pluginName)?.results;
+
+      if (!pluginResults) {
+        console.log(getMissingRequirementMessage(pluginName, resultName));
+        return [];
+      }
+
+      if (!pluginResults?.some(res => res.extractedVars?.[resultName])) {
+        console.log(getMissingResultFieldMessage(pluginName, resultName));
+        return [];
+      }
+
+      return pluginResults?.flatMap(res => res.extractedVars[resultName] || []);
+    });
+
+    return step.fn(this?.pluginSpecificData, ...args);
+  }
 
   runPluginRoutine = async (): Promise<PlugInRoutineResult<R>> => {
-    let hasErrors = false;
+    const files = await this.getFilesFn(this.path, this?.pluginSpecificData);
+    const extractRoutines = files.map(this.extractFromFile);
+    const results = await Promise.all(extractRoutines);
 
-    const files = await this.getFilesFn(this.path, this.pluginSpecific);
-
-    const multipleFiles = Array.isArray(files);
-
-    const results = await Promise.all(
-      multipleFiles
-        ? files.map(this.extractFromFile)
-        : [this.extractFromFile(files)]
-    );
+    let foundErrors = false;
 
     for (const result of results) {
-      const { path } = result;
-
-      const errors = this.verifySteps
-        .flatMap(this.runVerifyStep(result));
+      const errors = this.verifySteps.map(this.runVerifyStep(result)).flat();
 
       if (errors.length > 0) {
-        hasErrors = true;
-
-        console.log(this.getFailureMessage(path));
+        foundErrors = true;
+        console.log(this.getFailureMessage(result.path));
         console.log(getFormattedErrors(errors))
       } else {
-        console.log(this.getSuccessMessage(path));
+        console.log(this.getSuccessMessage(result.path));
       }
     }
 
@@ -132,81 +138,30 @@ export class PlugInRunner<
       name: this.name,
       path: this.path,
       results,
-      hasErrors,
+      foundErrors,
     };
-  }
-
-  runVerifyStep = (result: ExtractResults<R>) => (step: VerifyStep) => {
-    const args = step.argPaths.map(([pluginName, resultName]) => {
-      const pluginResult = pluginName === 'this'
-        ? result
-        : this.previousResults
-          .find(r => r.name === pluginName)
-          ?.results;
-
-      if (!pluginResult) {
-        console.log(`Could not find plugin ${pluginName}`);
-        return [];
-      }
-
-      const varResults: string[] = !Array.isArray(pluginResult)
-        ? pluginResult.extractedVars[resultName]
-        : pluginResult
-          ?.flatMap(r => r.extractedVars[resultName]) || [];
-
-      if (!varResults) {
-        const pluginDisplayName = pluginName === 'this'
-          ? this.name
-          : pluginName;
-
-        console.log(
-          'Could not find variable ',
-          `%c${resultName}`, 'color: red;',
-          `in %c${pluginDisplayName}`, 'color: blue;',
-        );
-        return [];
-      }
-
-      return varResults;
-    });
-
-    return step.fn(this.pluginSpecific, ...args,);
   }
 }
 
-export const runRoutines = async (plugs: VerVarPlugin<any, any>[]) => {
-  let failed = false;
+export const runRoutines = async (plugins: VerVarPlugin<any>[]) => {
+  let previousResults: PlugInRoutineResult<any>[] = []; // TODO could probably use recursion?
+  let somePluginsFailedRequirements = false;
 
-  let previousResults: PlugInRoutineResult<any>[] = []; // TODO could probably use recursion;
+  for (let i = 0; i < plugins.length; i++) {
+    const plugin = plugins[i];
+    const runner = new PlugInRunner(plugin, previousResults);
 
-  const routines = plugs.map((plug, i) => async () => {
-    const previousPlugins = plugs.slice(0, i);
+    const previousPlugins = plugins.slice(0, i);
+    const requirementErrors = runner.verifyRequirements(previousPlugins);
 
-    const runner = new PlugInRunner(
-      plug,
-      previousResults
-    );
-
-    const errors = runner.verifyRequirements(previousPlugins);
-
-    if (errors.length > 0) {
-      console.log(getFailedRequirementsMessage(plug.name, errors))
-
-      failed = true;
+    if (requirementErrors.length > 0) {
+      somePluginsFailedRequirements = true;
+      console.log(getFailedRequirementsMessage(plugin.name, requirementErrors))
+    } else if (!somePluginsFailedRequirements) {
+      previousResults.push(await runner.runPluginRoutine());
     }
-
-    if (!failed) {
-      const results = await runner.runPluginRoutine();
-
-      previousResults.push(results);
-    }
-  })
-
-  for (const routine of routines) {
-    await routine();
   }
 
-  const hasErrors = previousResults.some(r => r.hasErrors);
-
-  console.log(getSummary(failed, hasErrors));
+  const somePluginsFoundVariableErrors = previousResults.some(r => r.foundErrors);
+  console.log(getSummary(somePluginsFailedRequirements, somePluginsFoundVariableErrors));
 };

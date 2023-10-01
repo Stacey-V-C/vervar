@@ -15,7 +15,7 @@
     "./plugins/kustomize": "./dist/plugins/kustomize.js",
     "./plugins/terraform": "./dist/plugins/terraform.js",
     "./plugins/dotEnv": "./dist/plugins/dotEnv.js",
-    "./plugins/customEnvVars": "./dist/plugins/customEnvVars.js"
+    "./plugins/configCustomEnvVars": "./dist/plugins/configCustomEnvVars.js"
   },
   "author": "Stacey V Carroll",
   "license": "ISC",

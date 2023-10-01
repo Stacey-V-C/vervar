@@ -2,12 +2,12 @@ import path from 'path';
 import { FileHandle } from 'fs/promises';
 
 import { defaultGetMultipleFilesFn } from '../../customPluginUtils';
-import type { ArgPaths, VerVarPlugin } from '../../types';
+import type { VerVarPlugin, VerifyStep } from '../../types';
 
-import { 
-  getUnmatchedParamMessage, 
-  getUnmatchedSecretKeyMessage, 
-  getUnmatchedSecretMessage 
+import {
+  getUnmatchedParamMessage,
+  getUnmatchedSecretKeyMessage,
+  getUnmatchedSecretMessage
 } from './text';
 
 type KustomizeResult = {
@@ -15,9 +15,7 @@ type KustomizeResult = {
   secrets: string[],
   params: string[],
 }
-
-type KustomizeResultKeys = keyof KustomizeResult;
-const kustomizeResultKeys: KustomizeResultKeys[] = ['secretKeys', 'secrets', 'params'];
+const kustomizeResultKeys: (keyof KustomizeResult)[] = ['secretKeys', 'secrets', 'params'];
 
 const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
   const results: Record<keyof KustomizeResult, string[]> = {
@@ -50,25 +48,25 @@ const extractParamsSecretsAndSecretKeys = async (file: FileHandle) => {
   return results;
 };
 
-const verifySecretKeysAreUsed = {
+const verifySecretKeysAreUsed: VerifyStep = {
   argPaths: [
     ['this', 'secretKeys'],
-    ['customEnvVars', 'customEnvVars']
-  ] as ArgPaths,
-  fn: (_: unknown, secretKeys: string[], customEnvVars: string[]) => {
+    ['configCustomEnvVars', 'configCustomEnvVars']
+  ],
+  fn: (_: unknown, secretKeys: string[], configCustomEnvVars: string[]) => {
     const errors = secretKeys
-      .filter(secretKey => !customEnvVars.includes(secretKey))
+      .filter(secretKey => !configCustomEnvVars.includes(secretKey))
       .map(secretKey => getUnmatchedSecretKeyMessage(secretKey));
 
     return errors;
   },
 };
 
-const verifyParamsAndSecretsMatch = {
+const verifyParamsAndSecretsMatch: VerifyStep = {
   argPaths: [
     ['this', 'params'],
     ['this', 'secrets']
-  ] as ArgPaths,
+  ],
   fn: (_: unknown, params: string[], secrets: string[]) => {
 
     const formattedSecrets = secrets.map(secret => secret.replace(/\./g, '/'));
@@ -85,11 +83,11 @@ const verifyParamsAndSecretsMatch = {
   }
 };
 
-export const verifyTerraformPassesParams = {
+export const verifyTerraformPassesParams: VerifyStep = {
   argPaths: [
     ['this', 'params'],
     ['terraform', 'params']
-  ] as ArgPaths,
+  ],
   fn: (_: unknown, params: string[], terraformParams: string[]) => {
     const errors = params //TODO we can probably make this a generic function
       .filter(param => !terraformParams.includes(param))
@@ -99,10 +97,7 @@ export const verifyTerraformPassesParams = {
   },
 };
 
-export const KustomizePlugin: VerVarPlugin<
-  KustomizeResult,
-  KustomizeResultKeys
-> = {
+export const KustomizePlugin: VerVarPlugin<KustomizeResult> = {
   name: 'kustomize',
   path: path.join(process.cwd(), '_infra'),
   resultNames: kustomizeResultKeys,

@@ -4,9 +4,7 @@ import { FileHandle } from "fs/promises";
 import { defaultGetSingleFileFn } from "../../customPluginUtils";
 import type { VerVarPlugin } from "../../customPluginUtils/types";
 
-type CustomEnvVarResult = { customEnvVars: string[] }
-type CustomEnvVarResultKeys = keyof CustomEnvVarResult;
-const customEnvVarResultKeys: CustomEnvVarResultKeys[] = ['customEnvVars'];
+type CustomEnvVarResult = { configCustomEnvVars: string[] }
 
 export const extractJSONEnvVarRecursive = (val: any): string[] => typeof val === 'string'
   ? [val]
@@ -24,23 +22,20 @@ const extractCustomEnvVarsForJson = async (file: FileHandle, pluginConfig: any) 
 
   const additionalEnvVars: string[] = pluginConfig?.additionalEnvVars || [];
 
-  const customEnvVars = [
+  const configCustomEnvVars = [
     ...parsedEnvVars,
     ...additionalEnvVars,
   ];
 
-  return { customEnvVars };
+  return { configCustomEnvVars };
 };
 
-export const CustomEnvVarPlugin: VerVarPlugin<
-  CustomEnvVarResult,
-  CustomEnvVarResultKeys
-> = {
-  name: 'customEnvVars',
+export const CustomEnvVarPlugin: VerVarPlugin<CustomEnvVarResult> = {
+  name: 'configCustomEnvVars',
   path: path.join(process.cwd(),
     'config', 'custom-environment-variables.json',
   ),
-  resultNames: customEnvVarResultKeys,
+  resultNames: ['configCustomEnvVars'],
   getFilesFn: defaultGetSingleFileFn,
   extractFn: extractCustomEnvVarsForJson,
 };
