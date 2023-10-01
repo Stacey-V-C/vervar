@@ -1,4 +1,4 @@
-export const {
+export {
   defaultCss,
   errorCss,
   fileCss,
@@ -6,10 +6,11 @@ export const {
   pluginCss,
   successCss,
   variableCss,
-  trimPath,
-} = require('../output');
+} from '../output/messages';
 
-export const {
+export { trimPath } from '../output/util';
+
+export {
   defaultGetSingleFileFn,
   defaultGetMultipleFilesFn,
-} = require('../files');
+} from '../files';

@@ -1,9 +1,9 @@
-export const {
+export {
   defaultGetMultipleFilesFn,
   defaultGetSingleFileFn,
-} = require('./getFiles');
+} from './getFiles';
 
-export const {
+export {
   getPluginsFromConfigFile,
   getPluginsFromLoaderScript,
-} = require('./getConfig');
+} from './getConfig';
