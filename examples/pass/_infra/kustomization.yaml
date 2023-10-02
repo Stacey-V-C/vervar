@@ -1,0 +1,22 @@
+commonLabels:
+  app: example
+
+patchesJson6902:
+- target:
+      kind: SecretProviderClass
+      name: service
+  patch: |-
+    - op: replace
+      path: /spec/parameters/objects
+      value: |
+          - objectName: "/example/path/param"
+            objectType: "ssmparameter"
+          - objectName: "/example/path/secret"
+            objectType: "ssmparameter"
+    - op: replace
+        path: /spec/secretObjects/0/data
+        value:
+          - key: K8_PARAM
+            objectName: .example.path.param
+          - key: K8_SECRET
+            objectName: .example.path.secret

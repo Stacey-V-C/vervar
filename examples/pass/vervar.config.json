@@ -1,0 +1,17 @@
+{
+  "plugins": [
+    {
+      "plugin": "../plugins/customEnvVars/plugin.js",
+      "overrides": {
+        "pluginSpecific": {
+          "additionalEnvVars": [
+            "DB_SECRET"
+          ]
+        }
+      }
+    },
+    "../plugins/terraform/plugin.js",
+    "../plugins/dotEnv/plugin.js",
+    "../plugins/kustomize/plugin.js"
+  ]
+}

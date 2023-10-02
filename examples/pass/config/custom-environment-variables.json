@@ -1,0 +1,10 @@
+{
+  "kubernetes": {
+    "param": "K8_PARAM",
+    "secret": "K8_SECRET"
+  },
+  "db": {
+    "param": "DB_PARAM",
+    "secret": "DB_SECRET"
+  }
+}
